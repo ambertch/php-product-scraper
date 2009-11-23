@@ -1,0 +1,21 @@
+
+Page retrieval and parsing: I used simplehtmldom (http://simplehtmldom.sourceforge.net) as to not reinvent the wheel. 
+
+Handlers are kept in a subfolder and autoloaded as necessary.
+
+Bonus #1 
+This doesn't follow your stipulation of "Adding/removing handlers should accessible through static methods", but I thought it was cool and nifty so I decided to see if it works: 
+
+Converting the hostname component of parse_url() to a legal variable name by replacing "." with "_" (www.amazon.com becomes www_amazon_com), we leverage php's class_exists() and autoload functionality. The script takes the converted url and first looks for a class of that name, then strips a subdomain and looks again. So if class books_amazon_com doesn't exist, it will look for class amazon_com. In this way wildcard handlers for subdomains are implemented - if the subdomain handler doesn't exist, the script will just use the domain handler.
+
+Handlers are loaded/unloaded via placing their class files in a folder and setting the include path there.
+
+Bonus #2 
+I did not implement anything from bonus #2, though here are some of the things I would do to address high volume:
+
+- RE: " if we make a lot of requests for a particular product in a day, there's not much likelihood that the product information would change in a day" - if there is an intent to 'cache' scraping for recently requested product pages, we can check when a product was last requested. Presumably we are storing this information in a database, so we can have a 'last updated' column. Because the normalized url represent a unique identifier of a product, before doing the actual scraping the Handler will take the normalized url and check it against the database. If an existing entry is older than a threshold, a new scraping is done. Else, save some processing power. Included in a text config file would be a field to set that recency threshold (by default something like 7 days?) In addition, we may want to scrape everything periodically such that the db doesn't become stale, since I'm sure those product pages will go away once an item goes out of season/is no longer carried.
+
+- If there is high volume traffic to the program, well, if we were using AWS it all doesn't matter :) But if not, I suppose it depends where the bottleneck is. Too many requests to the web server can be solved by load balancing, and there are cheap and expensive ways to do this. A bit too many concurrent database connections and we can up the maximum # of connections it accepts. Way too many connections for a single db to handle, I have been told that mirroring and scaling mysql becomes somewhat of a hassle and it's better to go something like S3 or Hadoop/HBase, but I don't know too much in that department.
+
+- If the tables of products grow huge, in addition we may chose to optimize the schema. For example the list of images on each product page is an array of variable length. Database rules for first normal form dictate I should store these in a separate "sites-images" table, but then I would need to join on those two tables when retrieving images for each product. Because joins are algorithmically expensive (they are basically O(n^2) i think), I may instead store all the images in a comma separated array occupying a single column and let my retrieving program separate the urls (comparatively inexpensive).
+

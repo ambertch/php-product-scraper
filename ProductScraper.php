@@ -6,7 +6,10 @@
 
 define('HANDLERS_LOCATION', 'Handlers/');
 define('IMAGE_WIDTH_THRESHOLD', 200);
- 
+
+/**
+ * Autoload for Handler classes 
+ */ 
 function __autoload($class)
 {
 	require_once(HANDLERS_LOCATION . $class . '.php');
@@ -24,7 +27,13 @@ class ProductScraper
 	private $errors = array();
 	
 	/** 
-	 *  
+	 * Parses product page and either calls site specific Handler, or uses default
+	 * methods to scrape page. Returns an array (values null if n/a) containing:
+	 *   - [0] Title of object
+	 *   - [1] Price of object
+	 *   - [2] Description of object
+	 *   - [3] Array() of likely product images
+	 *   - [4] Normalized url
 	 * 
 	 * @param string $url  
 	 */
@@ -133,8 +142,7 @@ class ProductScraper
 	}
 
 	/**
-	 * returns an array of urls of images wider than the defined constant 
-	 * IMAGE_WIDTH_THRESHOLD
+	 * returns an array of urls of images wider than constant IMAGE_WIDTH_THRESHOLD 
 	 * 
 	 * @param string $pageData
 	 * 

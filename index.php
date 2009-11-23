@@ -1,7 +1,7 @@
 <?php
 
 require_once('ProductScraper.php');
-ProductScraper::getInfo('http://www.google.com/search?q=hello');
+ProductScraper::getInfo('http://www.zappos.com/lucky-brand-abbey-road-dune?zlfid=111');
 
 /*for a general purpose one, maybe the best thing to do for description is grab the description metadata 
  * if it exists and isn't empty, and if that doesn't work try to scan for the first <p> tag and just use that. 

@@ -1,14 +1,16 @@
 <?php
 
 /**
- * Handler classes - AUTOLOAD THIS
+ * Configuration parameters
  */
-//require_once "config/Handlers.php";
- 
 
+define('HANDLERS_LOCATION', 'Handlers/');
 define('IMAGE_WIDTH_THRESHOLD', 200);
  
- 
+function __autoload($class)
+{
+	require_once(HANDLERS_LOCATION . $class . '.php');
+} 
  
 /**
  * Product scraper
@@ -22,7 +24,7 @@ class ProductScraper
 	private $errors = array();
 	
 	/** 
-	 * Handlers classes are named 
+	 *  
 	 * 
 	 * @param string $url  
 	 */
@@ -58,34 +60,43 @@ class ProductScraper
 			if ((method_exists, $handlerName, 'customGetInfo') &&
 				(method_exists, $handlerName, 'customGetInfo') 
 		  		$results = Handler::customGetInfo($pageData, $urlComponents);
-		  	else $error[] = "Handler $handler exists for $url but 
+		  	else $error[] = "Handler $handler exists for $url but is incomplete/unformated"; 
 		}
 		else
 		{
-			$pageData = self::getPageData($normalizedUrl);
-			$title = self::getTitle($pageData);
-			$price = self::getPrice($pageData);
-			$description = self::getDescription($pageData);
+		}*/
+			$pageData = self::getPageData($url);
+			$title = self::getTitle($pageData, $startPattern, $endPattern);
+			$price = self::getPrice($pageData, $startPattern, $endPattern);
+			$description = self::getDescription($pageData, $startPattern, $endPattern);
 			$images = self::getImages($pageData);
 			$normalizedUrl = self::defaultNormalize($urlComponents);	
-		}
-			
-
-		*/
 		
+		echo $pageData;
 		
 	}
 
-
-	private static function getPageData($normalizedUrl)
+	/**
+	 * @param string $url
+	 * 
+	 * @return string
+	 */
+	protected static function getPageData($url)
 	{
-		$pageData = curl_init($normalizedUrl);
+		$pageData = curl_init($url);
 		curl_setopt($pageData, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($pageData, CURLOPT_FOLLOWLOCATION, 1);
 		return curl_exec($pageData);
 	}
 	
-	private static function getTitle($pageData)
+	/**
+	 * @param string $pageData
+	 * @param string $startPattern
+	 * @param string $endPattern
+	 * 
+	 * return string
+	 */
+	private static function getTitle($pageData, $startPattern, $endPattern)
 	{
 		/*
 		$oHTMLDom = str_get_html($result);
@@ -97,37 +108,52 @@ class ProductScraper
 		return 0;
 	}
 	
-	private static function getPrice($pageData)
+	/**
+	 * @param string $pageData
+	 * @param string $startPattern
+	 * @param string $endPattern
+	 * 
+	 * return float
+	 */
+	protected static function getPrice($pageData, $startPattern, $endPattern)
 	{
 		return 0;	
 	}
 	
-	
-	private static function getDescription($pageData)
+	/**
+	 * @param string $pageData
+	 * @param string $startPattern
+	 * @param string $endPattern
+	 * 
+	 * return string
+	 */
+	protected static function getDescription($pageData, $startPattern, $endPattern)
 	{
 		return 0;	
 	}
-
 
 	/**
-	 * returns an array of string urls
+	 * returns an array of urls of images wider than the defined constant 
+	 * IMAGE_WIDTH_THRESHOLD
 	 * 
-	 * @param
+	 * @param string $pageData
 	 * 
 	 * @return array
 	 */
-	private static function getImages($pageData)
+	protected static function getImages($pageData)
 	{
 		return 0;
 	}
 
 	/**
-	 * a very mild default normalization, just strip the 'http://www.'
-	 * and take out fragments
+	 * a very mild default normalization, just strip the 'http://www.' and the
+	 * fragments
 	 * 
 	 * $param array $urlComponents
+	 * 
+	 * return string
 	 */
-	private static function defaultNormalize($urlComponents)
+	protected static function defaultNormalize($urlComponents)
 	{
 		$normalizedUrl = preg_replace('/^www./', '', $urlComponents['host']);
 		$normalizedUrl .= $urlComponents['path'];

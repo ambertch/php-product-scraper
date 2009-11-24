@@ -21,7 +21,7 @@ What this code is missing:
 
 
 Bonus #1 
-This doesn't follow your stipulation of "Adding/removing handlers should accessible through static methods", but I thought it was cool and nifty so I decided to see if it works:  Converting the hostname component of parse_url() to a legal variable name by replacing "." with "_" (www.amazon.com becomes www_amazon_com), we leverage php's class_exists() and autoload functionality. The script takes the converted url and first looks for a class of that name, then strips a subdomain and looks again. So if class books_amazon_com doesn't exist, it will look for class amazon_com. In this way wildcard handlers for subdomains (currently just for one level down) are implemented - if the subdomain handler doesn't exist, the script will just use the domain handler.
+This doesn't follow your stipulation of "Adding/removing handlers should accessible through static methods", but I thought it was cool and nifty so I decided to see if it works:  Converting the hostname component of parse_url() to a legal variable name by replacing "." with "_" (www.amazon.com becomes www_amazon_com), we leverage php's class_exists() and autoload functionality. The script takes the converted url and first looks for a class of that name. If it can't find that class, it strips a subdomain and looks again. So if class "books_amazon_com" doesn't exist, it will look for class "amazon_com." In this way wildcard handlers for subdomains (currently just for one level down) are implemented - if the subdomain handler doesn't exist, the script will just use the domain handler.
 
 
 Bonus #2 

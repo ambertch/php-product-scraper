@@ -4,21 +4,20 @@
  * Configuration parameters
  */
 define('HANDLERS_LOCATION', 'Handlers/');
-define('IMAGE_WIDTH_THRESHOLD', 200);
 
 /**
  * Autoload for Handler classes 
  */ 
 function __autoload($class) 
 {
-	require_once(HANDLERS_LOCATION . $class . '.php');
+	@include(HANDLERS_LOCATION . $class . '.php');
 } 
  
 /**
  * Product scraper
  * This class has one public static method getInfo() which takes a product url
- * and parses out title, price info, description, images, and a normalized url,
- * invoking a custom handler if one is present
+ * and parses out title, price info, description, images, and a normalized url
+ * and returns them in an array
  * 
  * Custom Handlers must implement:
  *   1. XPath queries for all scraping functions 
@@ -34,7 +33,7 @@ class ProductScraper
 	 * Loads up product page and either calls site specific Handler, or uses default
 	 * Handler to scrape page. 
 	 * 
-	 * The Handler returns an array (values null if n/a) containing:
+	 * The Handler returns an array (values NULL if failed) containing:
 	 *   - [0] Title of object
 	 *   - [1] Price of object
 	 *   - [2] Description of object
@@ -48,7 +47,6 @@ class ProductScraper
 	 */
 	static public function getInfo($url)
 	{
-
 		// initialize working variables
 		$urlComponents = parse_url($url);
 
@@ -63,9 +61,7 @@ class ProductScraper
 		 */
 		$domain = $urlComponents['host'];
 		$handlerName = preg_replace('/[.]/', '_', $domain);
-	  
-	    /*
-		// check if we use a subdomain, or domain level handler
+	  	
 		if (class_exists($handlerName))
 		{
 			$handlerExists = TRUE;
@@ -74,18 +70,16 @@ class ProductScraper
 		{
 			$handlerName = preg_replace('/\b[a-z0-9A-Z]+_/', '', $handlerName);
 			(class_exists($handlerName)) ?	$handlerExists = TRUE : 0;
-			}	
-		} 
+		}	
 		
 		if ($handlerExists)
 		{
-		  	return $handlerName::customGetInfo($xpath, $urlComponents); 
-		}
-		*/		
+		  	$handler = new $handlerName();
+	  		return $handler->customScraper($xpath, $urlComponents);  
+		}			
 		
-		//we pass the page string data to the default handler b/c it parses price with text processing 
-		self::defaultScraper($xpath, $urlComponents, $pageData);
-		
+		//Unlike custom Handlers, we pass the page string data to the default handler b/c it parses price with text processing 
+		return self::defaultScraper($xpath, $urlComponents, $pageData);
 	}
 
 
@@ -114,7 +108,6 @@ class ProductScraper
 	 */
 	static protected function getTitle($xpath, $xpathQuery)
 	{
-			
 		$title = $xpath->evaluate($xpathQuery);
 		
 		// could use textContent too, but nodeValue is DOM level 1
@@ -122,6 +115,9 @@ class ProductScraper
 	}
 
 	/**
+	 * For getting the price, we just query and return a DOMNodeList because 
+	 * we don't know what kind of processing the Handlers need to do. 
+	 * 
 	 * @param DOMXPath $xpath
 	 * @param string $xpathQuery
 	 * 
@@ -129,13 +125,12 @@ class ProductScraper
 	 */
 	static protected function getPrice($xpath, $xpathQuery)
 	{		
-		return $xpath->evaluate($xpathQuery);
-				
+		return $xpath->evaluate($xpathQuery);		
 	}
 	
 	/**
-	 * For getting the description, we just query and return a DOMNodeList, because 
-	 * we don't know what kind of element the Handlers are looking for. 
+	 * For getting the description, we just query and return a DOMNodeList because 
+	 * we don't know what kind of processing the Handlers need to do. 
 	 * 
 	 * @param DOMXPath $xpath
 	 * @param string $xpathQuery
@@ -144,9 +139,7 @@ class ProductScraper
 	 */
 	static protected function getDescription($xpath, $xpathQuery)
 	{
-		
-		return $xpath->evaluate($xpathQuery);
-			
+		return $xpath->evaluate($xpathQuery);		
 	}
 
 	/**
@@ -157,7 +150,6 @@ class ProductScraper
 	 */
 	static protected function getImages($xpath, $xpathQuery, $imageWidthThreshold)
 	{
-
 		$productImages = Array();
 		$allImages = $xpath->evaluate($xpathQuery);
 		
@@ -165,12 +157,10 @@ class ProductScraper
 		{
 			$image = $allImages->item($i);
 			$imageWidth = $image->getAttribute('width');
-
 			($imageWidth > $imageWidthThreshold) ? $productImages[] = $image->getAttribute('src') : 0;
 		}
 		
-		return $productImages;
-		
+		return $productImages;	
 	}
 
 	/**
@@ -181,14 +171,12 @@ class ProductScraper
 	 * return string
 	 */
 	static protected function defaultNormalize($urlComponents)
-	{
-		
+	{	
 		$normalizedUrl = preg_replace('/^www./', '', $urlComponents['host']);
 		$normalizedUrl .= $urlComponents['path'];
-		$normalizedUrl .= '?';
+		($urlComponents['query']) ? ($normalizedUrl .= '?') : 0;
 		$normalizedUrl .= $urlComponents['query'];
-		return $normalizedUrl;
-		
+		return $normalizedUrl;	
 	}
 
 
@@ -206,7 +194,6 @@ class ProductScraper
 	 */
 	 static private function defaultScraper($xpath, $urlComponents, $pageData)
 	 {
-	 	
 	 	$xpathQuery = '/html/head/title';
 		$title = self::getTitle($xpath, $xpathQuery);
 		
@@ -214,10 +201,12 @@ class ProductScraper
 		
 		$xpathQuery = '/html/head/meta';
 		$descriptionNodeArray = self::getDescription($xpath, $xpathQuery);
+		$description = "a description metatag has not been found";
 		for($i = 0; $i < $descriptionNodeArray->length; $i++)
 		{			
 			$descriptionNode = $descriptionNodeArray->item($i);
-			($descriptionNode->getAttribute('name') == 'description') ? $description=$descriptionNode->getAttribute('content') : 0;		
+			(($descriptionNode->getAttribute('name') == 'description') ||
+			 ($descriptionNode->getAttribute('name') == 'Description')) ? $description=$descriptionNode->getAttribute('content') : 0;		
 		}
 		
 		$imageWidthThreshold = 200;
@@ -226,27 +215,30 @@ class ProductScraper
 		
 		$normalizedUrl = self::defaultNormalize($urlComponents);
 		
-		//testing output
-		echo "Title: $title <br />";
-		echo "Price: $" . $price . "<br />";
-		echo "Description: $description <br />";
-		echo "Images: "; print_r($productImages); echo '<br />';
-		echo "Normalized url: $normalizedUrl <br />";
+		//assemble return array
+		$scrapedValues = Array();
+		$scrapedValues[] = $title;
+		$scrapedValues[] = $price;
+		$scrapedValues[] = $description;
+		$scrapedValues[] = $productImages;
+		$scrapedValues[] = $normalizedUrl;		
+
+		return $scrapedValues;	
 	 }
 
 	/**
-	 * the default handler just regex matches instead of parsing a node
-	 * 
 	 * @param string $pageData
 	 * 
 	 * return float
 	 */
 	static private function defaultGetPrice($pageData)
 	{
-		return 43.21;	
+		$priceMatches = Array();
+		preg_match('/\$\d+\.\d\d/', $pageData, $priceMatches);
+		$firstPrice = $priceMatches[0];
+		return $firstPrice;		
 	}
 
 } 
- 
  
 ?>

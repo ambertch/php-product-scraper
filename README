@@ -1,22 +1,23 @@
 
 Page retrieval and parsing: 
+- site specific custom Handlers are kept in a subfolder and autoloaded as necessary. Each Handler is a subclass of ProductScraper. The Handler calls its parent's universal scraper functions using its own query, and processes the result.
+- custom Handlers can be tested out by calling ProductScraper::getInfo('http://store.americanapparel.net/rsa642sg.html'); in index.php, as I have written a sample Handler for American Apparel.
+
 - I used curl since it has universal support across all web hosting providers. I did a simple implementation w/ only faking a user agent, ignoring faking login/cookies.  
 
 - php 5's DOM extension allows us to parse the page. The string returned by curl is turned into a DOMDocument. Via the defaultScraper or site specific Handlers, that and a DOMXPath object along with an xpath query is passed to the universal scraper functions.
 - I'm choosing to grab data with XPath instead of a simple regex/strpos(). I think there is an advantage in robustness for a production implementation, by traversing the DOM.
 
-- having the universal scrapers return price and description as a DOMNodeList confers numerous advantages. For example it allows a custom Handler to process multiple pricings if the item is on sale, or if multiple pricing options are available. Similarly, a product's description may often be contained in multiple nodes - returning a single string is less conducive to semantic processing.
+- having the universal scrapers return price and description as a DOMNodeList confers numerous advantages. For example it allows a custom Handler to process multiple pricings in a modular way if the item is on sale, or if multiple pricing options are available. Similarly, a product's description may often be contained in multiple nodes - returning a single string is less conducive to semantic processing.
 
-- site specific Handlers are kept in a subfolder and autoloaded as necessary. Each Handler is a subclass of ProductScraper. The Handler then calls its parent's universal scraper functions using its own query, and processes the result.  
-
-- The default handler actually does not use the universal price scraper. This design decision was made because the default scraper should be as dumb and general as possible, so it will just preg_match() for a $ followed by a float. The custom handlers will use the universal scraper and do this in a more robust fashion, retrieving the known node containing the price.    
+- The default handler actually does not use the universal price scraper. This design decision was made because the default scraper should be as dumb and general as possible, so it will just preg_match() for a float matching /\$\d+\.\d\d/. The custom handlers will use the universal scraper and do this in a more robust fashion, retrieving the known node containing the price.    
 
 
 
 What this code is missing:
-1. Error handling: I'd put some try/catch blocks for the numerous exceptions that could arise (for example in the autoloading process) 
-2. The image scraper judges width based on the <img> attribute, not the true width from a downloaded image.
-3. I suspect that PHP5's DOMNode->getAttribute() has a bug. Though I didn't want to get into a rathole with hypotheses as to why.
+1. Error handling: I'd put some try/catch blocks for the numerous exceptions that could arise (Lots of things can go wrong. For example in the autoloading process) to make this more robust 
+2. I suspect that PHP5's DOMNode->getAttribute() has a bug, but need to do further testing. It does not read all node attributes correctly, thus sometimes breaking the image retrieval which relies on getting the width attribute. I see no syntactical difference between working and nonworking <img> tags - weird!
+
 
 
 
@@ -31,6 +32,6 @@ I did not implement anything from bonus #2, though here are some of the things I
 
 - If the tables of products grow huge, in addition we may chose to optimize the schema. For example the list of images on each product page is an array of variable length. Database rules for first normal form dictate I should store these in a separate "sites-images" table, but then I would need to join on those two tables when retrieving images for each product. Because SQL joins are algorithmically O(n^2), I may instead store all the images in a comma separated array occupying a single column and let my retrieving program separate the urls (comparatively inexpensive). This optimizes for reads while not really hurting write speeds.
 
-- If there is high volume traffic to the program, well, if we were using AWS it all doesn't matter :) But if not, I suppose it depends where the bottleneck is. Too many requests to the web server can be solved by load balancing, and there are cheap and expensive ways to do this. A bit too many concurrent database connections and we can up the maximum # of connections it accepts. Way too many connections for a single db to handle, I have been told that mirroring and scaling mysql becomes somewhat of a hassle and it's better to go something like S3 or Hadoop/HBase, but I don't know too much in that department.
+- If there is high volume traffic to the program, well, if we were using AWS it all doesn't matter :) But if not, I suppose it depends where the bottleneck is. Too many requests to the web server can be solved by load balancing, and there are cheap and expensive ways to do this. A bit too many concurrent database connections and we can up the maximum # of connections it accepts. Way too many connections for a single db to handle, I have been told that mirroring and scaling mysql becomes somewhat of a hassle and it's better to go something like S3 or Hadoop/HBase, but I don't know too much in that department!
 
 

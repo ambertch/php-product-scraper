@@ -1,4 +1,3 @@
-
 Page retrieval and parsing: 
 - site specific custom Handlers are kept in a subfolder and autoloaded as necessary. Each Handler is a subclass of ProductScraper. The Handler calls its parent's universal scraper functions using its own query, and processes the result.
 - custom Handlers can be tested out by calling ProductScraper::getInfo('http://store.americanapparel.net/rsa642sg.html'); in index.php, as I have written a sample Handler for American Apparel.
@@ -16,7 +15,7 @@ Page retrieval and parsing:
 
 What this code is missing:
 1. Error handling: I'd put some try/catch blocks for the numerous exceptions that could arise (Lots of things can go wrong. For example in the autoloading process) to make this more robust 
-2. I suspect that PHP5's DOMNode->getAttribute() has a bug, but need to do further testing. It does not read all node attributes correctly, thus sometimes breaking the image retrieval which relies on getting the width attribute. I see no syntactical difference between working and nonworking <img> tags - weird!
+2. I suspect that PHP5's DOMNode->getAttribute() has a bug, but need to do further testing. It does not read all node attributes correctly, thus sometimes breaking the image retrieval which relies on getting the width attribute. I see no syntactic difference between working and nonworking <img> tags - weird!
 
 
 

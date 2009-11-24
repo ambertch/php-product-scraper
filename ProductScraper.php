@@ -166,7 +166,7 @@ class ProductScraper
 	/**
 	 * default url normalization function
 	 * 
-	 * $param array $urlComponents
+	 * @param array $urlComponents
 	 * 
 	 * return string
 	 */

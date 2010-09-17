@@ -10,14 +10,7 @@ class store_americanapparel_net extends ProductScraper
 		// All logic should be implemented in this function 
 		
 		
-		echo "Bam! We're in the custom Handler. I actually didn't know in php a superclass" .
-				" can call a protected method from a subclass since that should violate encapsulation. " .
-				"That really works out for me though becuase I " .
-				"was originally planning to make customScraper a static method, but php's syntax" .
-				" does not allow you to call a class's static method using syntax like " .
-				"\$ClassName::\$staticMethod so I was forced to instantiate an object and call a member function" .
-				"<br /><br /><br /> These below are of course fake values," .
-				"but logic can be implemented very modularly <br /> <br />";
+		echo "Bam! We're in the custom Handler.";
 		
 		
 		$xpathQuery = '/html/head/title';
